@@ -1,0 +1,64 @@
+#!/bin/bash
+
+set -e
+set -o errexit  # always exit on error
+set -o pipefail # don't ignore exit codes when piping output
+
+indent() {
+	sed -u 's/^/       /'
+}
+echo "-----> Installing Apryse SDK..."
+
+BUILD_DIR=$1
+CACHE_DIR=$2
+VENDOR_DIR="$BUILD_DIR/vendor"
+INSTALL_DIR="$VENDOR_DIR/apryse"
+CACHE_FILE="$CACHE_DIR/PDFNetC64.tar.gz"
+TARBALL_URL="https://github.com/firmstudio/heroku-ruby-apryse-sdk-buildpack/raw/main/apryse/PDFNetC64.tar.gz"
+SWIG_TARBALL_URL="https://github.com/firmstudio/heroku-ruby-apryse-sdk-buildpack/raw/main/swig/swig-4.1.1.tar.gz"
+
+echo "-----> Installing SWIG..."
+cd $CACHE_DIR
+wget -nv $SWIG_TARBALL_URL | indent
+mkdir -p $VENDOR_DIR/swig
+tar xzf swig-4.1.1.tar.gz -C "$VENDOR_DIR/swig/" | indent
+cd $VENDOR_DIR/swig/swig-4.1.1
+./configure | indent
+make && make DESTDIR="$VENDOR_DIR/swig" install | indent
+export PATH="$PATH:$VENDOR_DIR/swig/usr/local/bin"
+export SWIG_LIB="$VENDOR_DIR/swig/usr/local/share/swig/4.1.1"
+
+echo "-----> Cloning Wrappers Repo..."
+mkdir -p $INSTALL_DIR
+cd $INSTALL_DIR
+git clone https://github.com/PDFTron/PDFNetWrappers | indent
+cd PDFNetWrappers
+git checkout 694b141934b1806d5dd2dc24a8993ae50f0abe42
+cd ..
+
+echo "-----> Downloading Apryse SDK Tarball..."
+cd $CACHE_DIR
+wget -nv $TARBALL_URL | indent
+
+echo "-----> Extracting Tarball..."
+tar xzf PDFNetC64.tar.gz -C "$INSTALL_DIR/PDFNetWrappers/PDFNetC/" | indent
+cd $INSTALL_DIR/PDFNetWrappers/PDFNetC
+mv PDFNetC64/Headers/ .
+mv PDFNetC64/Lib/ .
+
+echo "-----> Building PDFNetC..."
+cd $INSTALL_DIR/PDFNetWrappers
+mkdir Build
+cd Build
+cmake -D BUILD_PDFNetRuby=ON .. | indent
+make && make install | indent
+ls -la
+
+echo "-----> Cleaning up..."
+rm -rf $VENDOR_DIR/swig
+
+echo "-----> Symlinking into vendor folder..."
+ln -s $INSTALL_DIR/PDFWrappers/PDFNetC PDFNetC
+
+echo "-----> Success!"
+exit 0
