@@ -14,8 +14,9 @@ CACHE_DIR=$2
 VENDOR_DIR="$BUILD_DIR/vendor"
 INSTALL_DIR="$VENDOR_DIR/apryse"
 CACHE_FILE="$CACHE_DIR/PDFNetC64.tar.gz"
-TARBALL_URL="https://github.com/firmstudio/heroku-ruby-apryse-sdk-buildpack/raw/main/apryse/PDFNetC64.tar.gz"
-SWIG_TARBALL_URL="https://github.com/firmstudio/heroku-ruby-apryse-sdk-buildpack/raw/main/swig/swig-4.1.1.tar.gz"
+TARBALL_URL="https://github.com/gogrow-dev/heroku-ruby-apryse-sdk-buildpack/raw/main/apryse/PDFNetC64.tar.gz"
+SWIG_TARBALL_URL="https://github.com/gogrow-dev/heroku-ruby-apryse-sdk-buildpack/raw/main/swig/swig-4.1.1.tar.gz"
+STRUCTURED_OUTPUT_TARBAL_URL="https://docs.apryse.com/downloads/StructuredOutputLinux.tar.gz"
 
 echo "-----> Installing SWIG..."
 cd $CACHE_DIR
@@ -32,9 +33,6 @@ echo "-----> Cloning Wrappers Repo..."
 mkdir -p $INSTALL_DIR
 cd $INSTALL_DIR
 git clone https://github.com/PDFTron/PDFNetWrappers | indent
-cd PDFNetWrappers
-git checkout 694b141934b1806d5dd2dc24a8993ae50f0abe42
-cd ..
 
 echo "-----> Downloading Apryse SDK Tarball..."
 cd $CACHE_DIR
@@ -54,8 +52,19 @@ cmake -D BUILD_PDFNetRuby=ON .. | indent
 make && make install | indent
 ls -la
 
+echo "-----> Downloading Apryse Structured Output Module Tarball..."
+cd $CACHE_DIR
+wget -nv $STRUCTURED_OUTPUT_TARBAL_URL | indent
+
+echo "-----> Extracting Tarball..."
+mkdir "$INSTALL_DIR/PDFNetWrappers/PDFNetC/StructuredOutputModule"
+tar xzf StructuredOutputLinux.tar.gz -C "$INSTALL_DIR/PDFNetWrappers/PDFNetC/StructuredOutputModule" | indent
+cd $INSTALL_DIR/PDFNetWrappers/PDFNetC
+mv StructuredOutputModule/Lib/Linux/StructuredOutput ./Lib
+
 echo "-----> Cleaning up..."
 rm -rf $VENDOR_DIR/swig
+rm -rf $INSTALL_DIR/PDFNetWrappers/PDFNetC/StructuredOutputModule
 
 echo "-----> Symlinking into vendor folder..."
 ln -s $INSTALL_DIR/PDFWrappers/PDFNetC PDFNetC
