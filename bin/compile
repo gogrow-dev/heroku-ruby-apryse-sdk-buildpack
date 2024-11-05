@@ -33,6 +33,9 @@ echo "-----> Cloning Wrappers Repo..."
 mkdir -p $INSTALL_DIR
 cd $INSTALL_DIR
 git clone https://github.com/PDFTron/PDFNetWrappers | indent
+cd PDFNetWrappers
+git checkout 09cf46d013445377af5b176580944a7f6d30867a
+cd ..
 
 echo "-----> Downloading Apryse SDK Tarball..."
 cd $CACHE_DIR
@@ -62,12 +65,16 @@ tar xzf StructuredOutputLinux.tar.gz -C "$INSTALL_DIR/PDFNetWrappers/PDFNetC/Str
 cd $INSTALL_DIR/PDFNetWrappers/PDFNetC
 mv StructuredOutputModule/Lib/Linux/StructuredOutput ./Lib
 
+echo "-----> Symlinking into vendor folder..."
+ln -s $INSTALL_DIR/PDFWrappers/PDFNetC PDFNetC
+
 echo "-----> Cleaning up..."
 rm -rf $VENDOR_DIR/swig
 rm -rf $INSTALL_DIR/PDFNetWrappers/PDFNetC/StructuredOutputModule
-
-echo "-----> Symlinking into vendor folder..."
-ln -s $INSTALL_DIR/PDFWrappers/PDFNetC PDFNetC
+rm -rf $INSTALL_DIR/PDFNetWrappers/Build
+rm -rf $INSTALL_DIR/PDFNetWrappers/.git
+rm -rf $INSTALL_DIR/PDFNetWrappers/Samples
+rm -rf $INSTALL_DIR/PDFNetWrappers/PDFNetC/PDFNetC64
 
 echo "-----> Success!"
 exit 0
